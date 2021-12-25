@@ -1,5 +1,7 @@
+import re
+import random
+from data_reliability import PhoneNumber, Name
 from driver import Driver
-import constants
 from tkinter import *
 import PIL.ImageTk as ImageTk
 import PIL.Image as Image
@@ -9,7 +11,7 @@ from qrcode.image.styledpil import StyledPilImage
 from qrcode.image.styles.moduledrawers import RoundedModuleDrawer, \
     CircleModuleDrawer, SquareModuleDrawer, GappedSquareModuleDrawer, QRModuleDrawer
 
-from qrcode.image.styles.colormasks import RadialGradiantColorMask, SquareGradiantColorMask, HorizontalGradiantColorMask
+from qrcode.image.styles.colormasks import RadialGradiantColorMask, SquareGradiantColorMask, HorizontalGradiantColorMask, VerticalGradiantColorMask
 
 root = Tk()
 root.title("Driver 2.0")
@@ -19,6 +21,8 @@ root.resizable(False, False)
 
 global drivr
 drivr = Driver(root)
+phno_secure_pattern = PhoneNumber.securepattern
+name_secure_pattern = Name.securepattern
 
 # Functions
 
@@ -31,6 +35,29 @@ def clear():
     address_box.delete(0, END)
     generate_button = Button(frame_1, text="GENERATE", state=DISABLED).grid(row=4, column=2, sticky=E)
     qr_code_initial = Label(frame_2, image=blank).grid(row=0, column=0, sticky=E+W)
+    clear_button = Button(frame_1, text="CLEAR", state=DISABLED, command=clear).grid(row=4, column=3, sticky=E + W)
+    randomize_button = Button(frame_2, text="RANDOMIZE", state=DISABLED).grid(row=1, column=0, pady=20)
+
+
+
+def color_randomizer():
+    edge_color = ()
+    r = random.randint(0, 200)
+    g = random.randint(0, 200)
+    b = random.randint(0, 200)
+    edge_color = (r, g, b)
+    if edge_color == (0, 0, 0) or edge_color == (200, 200, 200): edge_color = color_randomizer()
+    return edge_color
+
+def color_randomizer1():
+    edge_color = ()
+    r = random.randint(0, 150)
+    g = random.randint(0, 150)
+    b = random.randint(0, 150)
+    edge_color = (r, g, b)
+    if edge_color == (0, 0, 0) or edge_color == (200, 200, 200): edge_color = color_randomizer()
+    return edge_color
+
 
 def generate():
     qr = qrcode.QRCode(
@@ -47,28 +74,32 @@ def generate():
         image_factory=StyledPilImage,
         color_mask=RadialGradiantColorMask(center_color=(255, 124, 0), edge_color=(0, 124, 255)),
         module_drawer=RoundedModuleDrawer())
-    img.save("QR_Codes/demo2.png")
+    filename = "QR_Codes/" + str(drivr.name+"_"+drivr.phone_number) + ".png"
+    img.save(filename)
     # print("Generation Completed")
     # refresh_qr_code_button = Button(frame_2, text="REFRESH", command=refresh_qr_code).grid(row=1, column=0, sticky=E)
     # messagebox.showinfo("QR Code Status", "QR Code has been generated")
-    img = ImageTk.PhotoImage(Image.open("QR_Codes/demo2.png"))
-    qr_code_initial = Label(frame_2, image=img).grid(row=0, column=0, sticky=E+W)
-    qr_code_initial.configure(image=img)
-    qr_code_initial.image=img
+    global imgshow
+    imgshow = ImageTk.PhotoImage(Image.open(filename))
+    randomize_button = Button(frame_2, text="RANDOMIZE", command=randomize).grid(row=1, column=0, pady=20)
+    qr_code_initial = Label(frame_2, image=imgshow).grid(row=0, column=0, sticky=E+W)
+    print(type(qr_code_initial))
+    # qr_code_initial.configure(image=img)
+    # qr_code_initial.image=img
 
 
 def get_details():
 
-    if name_box.get() == "":
-        messagebox.showerror("Fill all the data", "fill the name")
+    if name_box.get() == "" or re.match(name_secure_pattern, name_box.get()) == None:
+        messagebox.showerror("Fill all the data", "fill VALID name")
         return
     drivr.name = name_box.get()
     if phone_box.get() == "":
-        messagebox.showerror("Fill all the data", "fill the phone number")
+        messagebox.showerror("Fill all the data", "fill VALID phone number")
         return
     drivr.phone_number = phone_box.get()
     if address_box.get() == "":
-        messagebox.showerror("Fill all the data", "fill the address")
+        messagebox.showerror("Fill all the data", "address can't be blank")
         return
     drivr.address = address_box.get()
 
@@ -86,9 +117,46 @@ def get_details():
     # print(name, phone, address, organisation_var, blood_group_var, month_validity, year_validity)
     clear_button = Button(frame_1, text="CLEAR", command=clear).grid(row=4, column=3, sticky=E+W)
     generate_button = Button(frame_1, text="GENERATE", command=generate).grid(row=4, column=2, sticky=E)
- 
+
+def mask_setting(mask):
+    if mask.__name__ == 'RadialGradiantColorMask':
+        return RadialGradiantColorMask(center_color=color_randomizer(), edge_color=color_randomizer1())
+    if mask.__name__ == 'SquareGradiantColorMask':
+        return SquareGradiantColorMask(back_color=(255, 255, 255), center_color=color_randomizer(), edge_color=color_randomizer1())
+    if mask.__name__ == 'HorizontalGradiantColorMask':
+        return HorizontalGradiantColorMask(back_color=(255, 255, 255), left_color=color_randomizer(), right_color=color_randomizer1())
+    if mask.__name__ == 'VerticalGradiantColorMask':
+        return VerticalGradiantColorMask(back_color=(255, 255, 255), top_color=color_randomizer(), bottom_color=color_randomizer1())
+    
+
+
+def randomize():
+    qr = qrcode.QRCode(
+        # error_correction=qrcode.constants.ERROR_CORRECT_H,
+        box_size=5,
+        border=1,
+        version=2
+    )
+
+    qr.add_data(data_to_show)
+    qr.make(fit=True)
+    img = qr.make_image(  image_factory=StyledPilImage,
+                    color_mask=mask_setting(color_masks[random.randint(0, len(color_masks)-1)]),
+                    module_drawer=modules[random.randint(0, len(modules)-1)]())
+    filename = "QR_Codes/" + str(drivr.name + "_" + drivr.phone_number) + ".png"
+    img.save(filename)
+    # print("Generation Completed")
+    # refresh_qr_code_button = Button(frame_2, text="REFRESH", command=refresh_qr_code).grid(row=1, column=0, sticky=E)
+    # messagebox.showinfo("QR Code Status", "QR Code has been generated")
+    img = ImageTk.PhotoImage(Image.open(filename))
+    qr_code_initial = Label(frame_2, image=img).grid(row=0, column=0, sticky=E + W)
+    qr_code_initial.configure(image=img)
+    qr_code_initial.image = img
+
 
 # constants
+modules = [CircleModuleDrawer, RoundedModuleDrawer, SquareModuleDrawer, GappedSquareModuleDrawer]
+color_masks = [RadialGradiantColorMask, SquareGradiantColorMask, HorizontalGradiantColorMask, VerticalGradiantColorMask]
 blood_groups = ["A+", "A-", "B+", "B-", "O+", "O-", "AB+", "AB-"]
 months = ["Jan", "Feb", "March", "April", "May", "June", "July", "Aug", "Sept", "Oct", "Nov", "Dec"]
 years = [x for x in range(2021, 2046)]
@@ -130,7 +198,7 @@ license_validity = Label(frame_0, text="Licence Validity:").grid(row=5, column=0
 data_entered = Label(frame_1, text=initial_data)
 data_entered.grid(row=0, column=0, padx=35, pady=25, columnspan=4, rowspan=4)
 
-global qr_code_initial
+# global qr_code_initial
 qr_code_initial = Label(frame_2, image=blank).grid(row=0, column=0, sticky=E+W)
 
 
@@ -167,6 +235,8 @@ button_quit = Button(frame_0, text="EXIT", command=root.quit).grid(row= 10, colu
 
 generate_button = Button(frame_1, text="GENERATE", state=DISABLED).grid(row=4, column=2, sticky=E)
 clear_button = Button(frame_1, text="CLEAR", state=DISABLED, command=clear).grid(row=4, column=3, sticky=E+W)
+
+randomize_button = Button(frame_2, text="RANDOMIZE", state=DISABLED).grid(row=1, column=0, pady=20)
 
 data = drivr.name+"\n"+drivr.phone_number+"\n"+drivr.address+"\n"+drivr.organisation+"\n"+drivr.blood_group
 
