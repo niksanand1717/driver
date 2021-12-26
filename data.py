@@ -13,7 +13,7 @@ def show():
     cursor = connection.cursor()
     cursor.execute("SELECT oid, * FROM DRIVERS")
     res = cursor.fetchall()
-    print(res)
+    # print(res)
     records = ""
     for ress in res: records += str(ress) + "\n"
     frame_0 = Label(root, text=records, padx=25, pady=20).grid(row=0, column=0, padx=25, pady=20)
@@ -26,7 +26,7 @@ def del_entry():
     cursor.execute("DELETE FROM DRIVERS WHERE oid="+delete_entry.get())
     connection.commit()
     res = cursor.fetchall()
-    print(res)
+    # print(res)
     records = ""
     for ress in res: records += str(ress) + "\n"
     frame_0 = Label(root, text=records, padx=25, pady=20).grid(row=0, column=0, padx=25, pady=20)
