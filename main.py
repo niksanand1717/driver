@@ -1,4 +1,5 @@
 import re
+import sqlite3
 import random
 from data_reliability import PhoneNumber, Name
 from driver import Driver
@@ -94,7 +95,7 @@ def get_details():
         messagebox.showerror("Fill all the data", "fill VALID name")
         return
     drivr.name = name_box.get()
-    if phone_box.get() == "":
+    if phone_box.get() == "" or len(phone_box.get()) != 10:
         messagebox.showerror("Fill all the data", "fill VALID phone number")
         return
     drivr.phone_number = phone_box.get()
@@ -107,6 +108,23 @@ def get_details():
     drivr.blood_group = bg.get()
     drivr.licence_expiry_month = month.get()
     drivr.licence_expiry_year = year.get()
+
+    connection = sqlite3.connect('database.sqlite3')
+    cursor = connection.cursor()
+
+    cursor.execute("INSERT INTO DRIVERS VALUES(:name, :phno, :addr, :org, :bg, :mlv, :ylb)",
+                {
+                   'name':name_box.get(),
+                   'phno':phone_box.get(),
+                   'addr':address_box.get(),
+                   'org':organisation.get(),
+                   'bg':bg.get(),
+                   'mlv':str(month.get()),
+                   'ylb':int(year.get())
+                })
+
+    connection.commit()
+    connection.close()
 
     global data
     global data_to_show
@@ -148,10 +166,11 @@ def randomize():
     # print("Generation Completed")
     # refresh_qr_code_button = Button(frame_2, text="REFRESH", command=refresh_qr_code).grid(row=1, column=0, sticky=E)
     # messagebox.showinfo("QR Code Status", "QR Code has been generated")
-    img = ImageTk.PhotoImage(Image.open(filename))
-    qr_code_initial = Label(frame_2, image=img).grid(row=0, column=0, sticky=E + W)
-    qr_code_initial.configure(image=img)
-    qr_code_initial.image = img
+    global imgtoshow
+    imgtoshow = ImageTk.PhotoImage(Image.open(filename))
+    qr_code_initial = Label(frame_2, image=imgtoshow).grid(row=0, column=0, sticky=E + W)
+    # qr_code_initial.configure(image=img)
+    # qr_code_initial.image = img
 
 
 # constants
